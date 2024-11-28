@@ -17,6 +17,8 @@ organization_url = os.getenv("AZURE_ORG_URL")
 personal_access_token = os.getenv("AZURE_PAT")
 project_name = os.getenv("PROJECT_NAME")
 repository_id = os.getenv("REPO_ID")
+max_tokens = os.getenv("MAX_TOKENS")
+model_version = os.getenv("MODEL_VERSION")
 
 # List of authors to ignore
 IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "").split(",")
@@ -55,9 +57,9 @@ def is_recent_pr(creation_date):
 def analyze_pr_diff(pr_id, diff):
     prompt = f"Review the following pull request provide feedback to all modified files give attention to time complexity and clean code principles:\n{diff}"
     response = openai.Completion.create(
-        model="text-davinci-003", 
+        model=model_version, 
         prompt=prompt, 
-        max_tokens=300
+        max_tokens=max_tokens
     )
     return response.choices[0].text.strip()
 
