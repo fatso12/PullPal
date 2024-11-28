@@ -1,6 +1,8 @@
 # AI-Powered Pull Request Reviewer 🚀
 
-This Python script leverages the power of OpenAI 🧠 and Azure DevOps ⚙️ to automate the review process for pull requests. By analyzing code changes and providing actionable feedback, it helps maintain code quality and accelerate development.
+This Python script leverages the power of OpenAI 🧠 and Azure DevOps ⚙️ to automate the review process for pull requests. 
+By analyzing code changes and providing actionable feedback using OpenAI, 
+it helps maintain clean code quality and accelerate development by providing code review comments.
 
 ## Features:
 
