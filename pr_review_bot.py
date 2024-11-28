@@ -69,32 +69,62 @@ def comment_on_pr(pr_id, comment):
         comment={'content': comment}
     )
 
+
+# Fetch the diff content of a pull request
+def fetch_pr_diff(pr_id):
+    connection = get_azure_devops_connection()
+    git_client = connection.clients.get_git_client()
+    
+    # Fetch the pull request changes
+    changes = git_client.get_pull_request_changes(
+        repository_id=repository_id,
+        project=project_name,
+        pull_request_id=pr_id
+    )
+    
+    # Combine all file diffs into a single string
+    diff_content = ""
+    for change in changes.changes:
+        if change.item.is_folder:  # Skip folder-level changes
+            continue
+        diff_content += f"File: {change.item.path}\n"
+        diff_content += f"Change Type: {change.change_type}\n"
+        if change.change_type == "edit" and hasattr(change, "diffs"):
+            diff_content += f"Diff:\n{change.diffs}\n"  # Adjust as per API response
+    
+    return diff_content
+
 # Main function to fetch PRs and review them
 def review_pull_requests():
     pull_requests = get_pull_requests()
     for pr in pull_requests:
-        pr_author = pr.created_by.display_name
-        pr_creation_date = pr.creation_date  # ISO 8601 format
-        pr_id = pr.pull_request_id
+        author_name = pr.created_by.display_name
 
-        # Skip ignored authors
-        if is_author_ignored(pr_author):
-            print(f"Skipping PR #{pr_id} by ignored author: {pr_author}")
+        # Ignore PRs by specified authors
+        if author_name in ignored_authors:
+            print(f"Ignoring PR #{pr.pull_request_id} by {author_name}")
             continue
+        
+        print(f"Reviewing PR #{pr.pull_request_id} - {pr.title} by {author_name}")
 
-        # Skip PRs older than 24 hours
-        if not is_recent_pr(pr_creation_date):
-            print(f"Skipping PR #{pr_id} - not created within the last 24 hours")
-            continue
-
-        print(f"Reviewing PR #{pr_id} by {pr_author} - {pr.title}")
-        diff = pr.last_merge_commit.comment  # Fetch the actual diff here
+        # Fetch the diff content for the pull request
+        diff = fetch_pr_diff(pr.pull_request_id)
         if diff:
-            review_comment = analyze_pr_diff(pr_id, diff)
-            print(f"Generated Review: {review_comment}")
-            comment_on_pr(pr_id, review_comment)
+            print(f"Fetched diff content for PR #{pr.pull_request_id}")
+            
+            # Analyze the diff content using OpenAI
+            try:
+                review_comment = analyze_pr_diff(pr.pull_request_id, diff)
+                print(f"Generated Review for PR #{pr.pull_request_id}: {review_comment}")
+
+                # Comment on the pull request with the generated feedback
+                comment_on_pr(pr.pull_request_id, review_comment)
+                print(f"Posted review comment on PR #{pr.pull_request_id}")
+            except Exception as e:
+                print(f"Error analyzing or posting comment for PR #{pr.pull_request_id}: {str(e)}")
         else:
-            print(f"No diff found for PR #{pr_id}")
+            print(f"No diff content found for PR #{pr.pull_request_id}")
+
 
 # Run the script
 if __name__ == "__main__":
