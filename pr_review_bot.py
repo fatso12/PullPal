@@ -25,23 +25,32 @@ IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "").split(",")
 
 # Authenticate to Azure DevOps
 def get_azure_devops_connection():
-    credentials = BasicAuthentication('', personal_access_token)
-    connection = Connection(base_url=organization_url, creds=credentials)
-    return connection
+    try:
+        credentials = BasicAuthentication('', personal_access_token)
+        connection = Connection(base_url=organization_url, creds=credentials)
+        return connection
+    except Exception as e:
+        print(f"Error connecting to Azure DevOps: {str(e)}")
+        return None
 
 # Get pull requests from Azure DevOps
 def get_pull_requests():
-    connection = get_azure_devops_connection()
-    criteria = GitPullRequestSearchCriteria(status='active')
-    
-    git_client = connection.clients.get_git_client()
-    pull_requests = git_client.get_pull_requests(
-        project=project_name,
-        repository_id=repository_id,
-        search_criteria=criteria
+    try:
+        connection = get_azure_devops_connection()
+        if connection is None:
+            return []
 
-    )
-    return pull_requests
+        criteria = GitPullRequestSearchCriteria(status='active')
+        git_client = connection.clients.get_git_client()
+        pull_requests = git_client.get_pull_requests(
+            project=project_name,
+            repository_id=repository_id,
+            search_criteria=criteria
+        )
+        return pull_requests
+    except Exception as e:
+        print(f"Error fetching pull requests: {str(e)}")
+        return []
 
 # Check if PR author is ignored
 def is_author_ignored(author):
@@ -55,90 +64,112 @@ def is_recent_pr(creation_date):
 
 # Analyze the PR diff using OpenAI
 def analyze_pr_diff(pr_id, diff):
-    prompt = f"Review the following pull request provide feedback to all modified files give attention to time complexity and clean code principles:\n{diff}"
-    response = openai.Completion.create(
-        model=model_version, 
-        prompt=prompt, 
-        max_tokens=max_tokens
-    )
-    return response.choices[0].text.strip()
+    try:
+        prompt = f"Review the following pull request provide feedback to all modified files give attention to time complexity and clean code principles:\n{diff}"
+        response = openai.Completion.create(
+            model=model_version,
+            prompt=prompt,
+            max_tokens=max_tokens
+        )
+        return response.choices[0].text.strip()
+    except Exception as e:
+        print(f"Error analyzing PR {pr_id}: {str(e)}")
+        return ""
 
 # Comment on the pull request
 def comment_on_pr(pr_id, comment):
-    connection = get_azure_devops_connection()
-    git_client = connection.clients.get_git_client()
+    try:
+        connection = get_azure_devops_connection()
+        if connection is None:
+            return
 
-    # Create a comment thread
-    thread = CommentThread(
-        comments=[Comment(content=comment)],
-        status=CommentThreadStatus.active
-    )
+        git_client = connection.clients.get_git_client()
 
-    # Add the comment thread to the pull request
-    git_client.create_thread(
-        repository_id=repository_id,
-        project=project_name,
-        pull_request_id=pr_id,
-        thread=thread
-    )
-    print(f"Comment posted on PR #{pr_id}")
+        # Create a comment thread
+        thread = CommentThread(
+            comments=[Comment(content=comment)],
+            status=CommentThreadStatus.active
+        )
+
+        # Add the comment thread to the pull request
+        git_client.create_thread(
+            repository_id=repository_id,
+            project=project_name,
+            pull_request_id=pr_id,
+            thread=thread
+        )
+        print(f"Comment posted on PR #{pr_id}")
+    except Exception as e:
+        print(f"Error commenting on PR {pr_id}: {str(e)}")
 
 # Fetch the diff content of a pull request
 def fetch_pr_diff(pr_id):
-    connection = get_azure_devops_connection()
-    git_client = connection.clients.get_git_client()
-    
-    # Fetch the pull request changes
-    changes = git_client.get_pull_request_changes(
-        repository_id=repository_id,
-        project=project_name,
-        pull_request_id=pr_id
-    )
-    
-    # Combine all file diffs into a single string
-    diff_content = ""
-    for change in changes.changes:
-        if change.item.is_folder:  # Skip folder-level changes
-            continue
-        diff_content += f"File: {change.item.path}\n"
-        diff_content += f"Change Type: {change.change_type}\n"
-        if change.change_type == "edit" and hasattr(change, "diffs"):
-            diff_content += f"Diff:\n{change.diffs}\n"  # Adjust as per API response
-    
-    return diff_content
+    try:
+        connection = get_azure_devops_connection()
+        if connection is None:
+            return ""
+
+        git_client = connection.clients.get_git_client()
+
+        # Fetch the pull request changes
+        changes = git_client.get_pull_request_changes(
+            repository_id=repository_id,
+            project=project_name,
+            pull_request_id=pr_id
+        )
+
+        # Combine all file diffs into a single string
+        diff_content = ""
+        for change in changes.changes:
+            if change.item.is_folder:  # Skip folder-level changes
+                continue
+            diff_content += f"File: {change.item.path}\n"
+            diff_content += f"Change Type: {change.change_type}\n"
+            if change.change_type == "edit" and hasattr(change, "diffs"):
+                diff_content += f"Diff:\n{change.diffs}\n"  # Adjust as per API response
+
+        return diff_content
+    except Exception as e:
+        print(f"Error fetching diff for PR {pr_id}: {str(e)}")
+        return ""
 
 # Main function to fetch PRs and review them
 def review_pull_requests():
-    pull_requests = get_pull_requests()
-    for pr in pull_requests:
-        author_name = pr.created_by.display_name
+    try:
+        pull_requests = get_pull_requests()
+        for pr in pull_requests:
+            author_name = pr.created_by.display_name
 
-        # Ignore PRs by specified authors
-        if author_name in ignored_authors:
-            print(f"Ignoring PR #{pr.pull_request_id} by {author_name}")
-            continue
-        
-        print(f"Reviewing PR #{pr.pull_request_id} - {pr.title} by {author_name}")
+            # Ignore PRs by specified authors
+            if author_name in ignored_authors:
+                print(f"Ignoring PR #{pr.pull_request_id} by {author_name}")
+                continue
 
-        # Fetch the diff content for the pull request
-        diff = fetch_pr_diff(pr.pull_request_id)
-        if diff:
-            print(f"Fetched diff content for PR #{pr.pull_request_id}")
-            
-            # Analyze the diff content using OpenAI
-            try:
+            print(f"Reviewing PR #{pr.pull_request_id} - {pr.title} by {author_name}")
+
+            # Fetch the diff content for the pull request
+            diff = fetch_pr_diff(pr.pull_request_id)
+            if diff:
+                print(f"Fetched diff content for PR #{pr.pull_request_id}")
+
+                # Analyze the diff content using OpenAI
                 review_comment = analyze_pr_diff(pr.pull_request_id, diff)
                 print(f"Generated Review for PR #{pr.pull_request_id}: {review_comment}")
 
                 # Comment on the pull request with the generated feedback
                 comment_on_pr(pr.pull_request_id, review_comment)
                 print(f"Posted review comment on PR #{pr.pull_request_id}")
-            except Exception as e:
-                print(f"Error analyzing or posting comment for PR #{pr.pull_request_id}: {str(e)}")
-        else:
-            print(f"No diff content found for PR #{pr.pull_request_id}")
-
+            else:
+                print(f"No diff content found for PR #{pr.pull_request_id}")
+    except Exception as e:
+        print(f"Error reviewing pull requests: {str(e)}")
 
 # Run the script
 if __name__ == "__main__":
-    review_pull_requests()
+    try:
+        review_pull_requests()
+    except Exception as e:
+        print(f"An error occurred while reviewing pull requests: {str(e)}")
+
+
+
