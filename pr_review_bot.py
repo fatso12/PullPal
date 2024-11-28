@@ -4,6 +4,7 @@ from msrest.authentication import BasicAuthentication
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
+from azure.devops.v5_0.git.models import GitPullRequestSearchCriteria,Comment, CommentThread, CommentThreadStatus
 
 # Load environment variables from .env file
 load_dotenv()
@@ -29,11 +30,14 @@ def get_azure_devops_connection():
 # Get pull requests from Azure DevOps
 def get_pull_requests():
     connection = get_azure_devops_connection()
+    criteria = GitPullRequestSearchCriteria(status='active')
+    
     git_client = connection.clients.get_git_client()
     pull_requests = git_client.get_pull_requests(
         project=project_name,
         repository_id=repository_id,
-        status='active'
+        search_criteria=criteria
+
     )
     return pull_requests
 
@@ -61,13 +65,21 @@ def analyze_pr_diff(pr_id, diff):
 def comment_on_pr(pr_id, comment):
     connection = get_azure_devops_connection()
     git_client = connection.clients.get_git_client()
-    git_client.create_comment(
-        project=project_name,
-        repository_id=repository_id,
-        pull_request_id=pr_id,
-        comment={'content': comment}
+
+    # Create a comment thread
+    thread = CommentThread(
+        comments=[Comment(content=comment)],
+        status=CommentThreadStatus.active
     )
 
+    # Add the comment thread to the pull request
+    git_client.create_thread(
+        repository_id=repository_id,
+        project=project_name,
+        pull_request_id=pr_id,
+        thread=thread
+    )
+    print(f"Comment posted on PR #{pr_id}")
 
 # Fetch the diff content of a pull request
 def fetch_pr_diff(pr_id):
