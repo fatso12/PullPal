@@ -33,9 +33,13 @@ Extend the IGNORED_AUTHORS list to exclude specific authors.
 Future Enhancements:
 
 Advanced Code Analysis 📊: Integrate with tools like SonarQube or CodeClimate.
+
 Security Vulnerability Scanning 🛡️: Incorporate Snyk or Dependabot.
+
 Performance Optimization 🏎️: Analyze code for performance bottlenecks.
+
 Natural Language Processing 💬: Understand and respond to natural language comments.
+
 Machine Learning 🧠: Train models to predict code quality and suggest improvements.
 Contributing:
 
