@@ -5,7 +5,9 @@ This Python script leverages the power of OpenAI 🧠 and Azure DevOps ⚙️ to
 ## Features:
 
 Automated Code Review 🤖: Analyzes pull request diffs using OpenAI's advanced language models.
+
 Customizable Feedback 📝: Tailors feedback to specific code quality metrics and style guidelines.
+
 Azure DevOps Integration 🔗: Seamlessly integrates with Azure DevOps to fetch and comment on pull requests.
 
 How to Use:
