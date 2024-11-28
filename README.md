@@ -1,59 +1,42 @@
-# Azure DevOps PR Review Bot
+# AI-Powered Pull Request Reviewer 🚀
 
-This bot automatically reviews pull requests (PRs) in Azure DevOps and generates feedback using OpenAI's GPT model. The bot fetches pull request details, analyzes the diffs, and posts comments with a review. It is deployed on AWS and can be triggered periodically or on-demand.
+This Python script leverages the power of OpenAI 🧠 and Azure DevOps ⚙️ to automate the review process for pull requests. By analyzing code changes and providing actionable feedback, it helps maintain code quality and accelerate development.
 
-## Features
+## Features:
 
-- Fetches all pull requests from an Azure DevOps repository.
-- Analyzes the PR diffs using OpenAI's GPT model.
-- Posts feedback as comments on the PR.
-- Uses environment variables to securely store API keys and configuration.
+Automated Code Review 🤖: Analyzes pull request diffs using OpenAI's advanced language models.
+Customizable Feedback 📝: Tailors feedback to specific code quality metrics and style guidelines.
+Azure DevOps Integration 🔗: Seamlessly integrates with Azure DevOps to fetch and comment on pull requests.
 
-## AWS Services Used
+How to Use:
 
-### 1. **AWS Lambda (Recommended)**
+## Set up Environment Variables:
 
-The bot is designed to run as an AWS Lambda function. AWS Lambda allows you to run the code without provisioning or managing servers. Lambda will execute the bot on a scheduled basis or based on an event (e.g., when a new PR is created).
+Create a .env file in the project root.
+Add the following environment variables:
+OPENAI_API_KEY: Your OpenAI API key.
+AZURE_ORG_URL: Your Azure DevOps organization URL.
+AZURE_PAT: Your Azure DevOps Personal Access Token.
+PROJECT_NAME: Your Azure DevOps project name.
+REPO_ID: Your Azure DevOps repository ID.
+IGNORED_AUTHORS: A comma-separated list of authors to ignore.
+Run the Script:
 
-### 2. **Amazon CloudWatch Events (for Scheduling)**
+Execute the review_pull_requests() function to initiate the review process.
+Customization:
 
-CloudWatch Events can trigger the Lambda function to run at specified intervals (e.g., every hour, every day). This allows the bot to automatically review PRs without manual intervention.
+Modify the analyze_pr_diff function to customize the prompt and feedback generation.
+Adjust the is_recent_pr function to change the time window for PR consideration.
+Extend the IGNORED_AUTHORS list to exclude specific authors.
+Future Enhancements:
 
-### 3. **AWS Secrets Manager (Optional)**
+Advanced Code Analysis 📊: Integrate with tools like SonarQube or CodeClimate.
+Security Vulnerability Scanning 🛡️: Incorporate Snyk or Dependabot.
+Performance Optimization 🏎️: Analyze code for performance bottlenecks.
+Natural Language Processing 💬: Understand and respond to natural language comments.
+Machine Learning 🧠: Train models to predict code quality and suggest improvements.
+Contributing:
 
-For enhanced security, AWS Secrets Manager can be used to securely store sensitive information like API keys (OpenAI API key, Azure PAT). You can retrieve these secrets directly in your Lambda function.
+ Feel free to fork the repository, make changes, and submit a pull request.
 
-## Requirements
-
-- Python 3.x
-- Azure DevOps Personal Access Token (PAT)
-- OpenAI API Key
-- AWS Account for deploying the bot
-
-### Python Libraries
-
-This bot uses the following libraries:
-- `azure-devops`: To interact with the Azure DevOps API.
-- `openai`: To interact with the OpenAI API.
-- `requests`: For making HTTP requests.
-- `python-dotenv`: To load environment variables from a `.env` file.
-
-### Install Dependencies
-
-To install the necessary Python libraries, run:
-
-```bash
-pip install -r requirements.txt
-```
-### Configuration
-```bash
-# .env file
-OPENAI_API_KEY=your_openai_api_key
-AZURE_ORG_URL=https://dev.azure.com/your_organization
-AZURE_PAT=your_azure_pat
-PROJECT_NAME=your_project_name
-REPO_ID=your_repo_id
-```
-
-
-
+MIT License
