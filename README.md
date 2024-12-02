@@ -19,12 +19,17 @@ How to Use:
 ## Set up Environment Variables:
 
 Create a .env file in the project root.
-Add the following environment variables:
+# Add the following environment variables:
 OPENAI_API_KEY: Your OpenAI API key.
+
 AZURE_ORG_URL: Your Azure DevOps organization URL.
+
 AZURE_PAT: Your Azure DevOps Personal Access Token.
+
 PROJECT_NAME: Your Azure DevOps project name.
+
 REPO_ID: Your Azure DevOps repository ID.
+
 IGNORED_AUTHORS: A comma-separated list of authors to ignore.
 Run the Script:
 
