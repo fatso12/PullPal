@@ -43,6 +43,6 @@ Extend the IGNORED_AUTHORS list to exclude specific authors.
 
 
 
- # Feel free to fork the repository, make changes, and submit a pull request - issues are available !
+ ## Feel free to fork the repository, make changes, and submit a pull request - issues are available !
 
 MIT License
