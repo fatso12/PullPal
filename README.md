@@ -1,6 +1,8 @@
-# AI-Powered Pull Request Reviewer 🚀
+# PullPal 🤖
 
-This Python script leverages the power of OpenAI 🧠 and Azure DevOps ⚙️ to automate the review process for pull requests. 
+## AI-Powered Pull Request Reviewer 🚀
+
+PullPal leverages the power of OpenAI 🧠 and Azure DevOps ⚙️ to automate the review process for pull requests. 
 By analyzing code changes and providing actionable feedback using OpenAI, 
 it helps maintain clean code quality and accelerate development by providing code review comments.
 
@@ -45,6 +47,6 @@ Natural Language Processing 💬: Understand and respond to natural language com
 Machine Learning 🧠: Train models to predict code quality and suggest improvements.
 Contributing:
 
- Feel free to fork the repository, make changes, and submit a pull request.
+ #Feel free to fork the repository, make changes, and submit a pull request - issues are available !
 
 MIT License
