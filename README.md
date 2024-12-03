@@ -1,5 +1,7 @@
-# PullPal 🤖
 
+
+# PullPal 🤖
+https://ibb.co/L9tK0q2
 ## AI-Powered Pull Request Reviewer 🚀
 
 PullPal leverages the power of OpenAI 🧠 and Azure DevOps ⚙️ to automate the review process for pull requests. 
