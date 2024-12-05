@@ -4,7 +4,7 @@ from msrest.authentication import BasicAuthentication
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
-from azure.devops.v5_0.git.models import GitPullRequestSearchCriteria,Comment, CommentThread, CommentThreadStatus
+from azure.devops.v7_1.git.models import GitPullRequestSearchCriteria,Comment, CommentThread
 
 # Load environment variables from .env file
 load_dotenv()
@@ -88,7 +88,7 @@ def comment_on_pr(pr_id, comment):
         # Create a comment thread
         thread = CommentThread(
             comments=[Comment(content=comment)],
-            status=CommentThreadStatus.active
+            status="active"
         )
 
         # Add the comment thread to the pull request
@@ -170,6 +170,3 @@ if __name__ == "__main__":
         review_pull_requests()
     except Exception as e:
         print(f"An error occurred while reviewing pull requests: {str(e)}")
-
-
-
