@@ -67,7 +67,7 @@ def analyze_pr_diff(pr_id, diff):
     prompt="Review the following pull request and provide a short 1 paragrpah feedback for all modified files.be short and summeraized for every file no more than 1 paragraph is allowed, Give attention to time complexity and clean code principles check for possible errors:"
     client = OpenAI(api_key=OpenAI_api_key)  # This is the default and can be omitted
 
-    reponse = client.chat.completions.create(
+    response = client.chat.completions.create(
         model=model_version,  # Correct model name
         messages=[{
             "role": "user",
