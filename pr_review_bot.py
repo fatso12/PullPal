@@ -141,7 +141,7 @@ def review_pull_requests():
             author_name = pr.created_by.display_name
 
             # Ignore PRs by specified authors
-            if author_name in ignored_authors:
+            if author_name in IGNORED_AUTHORS:
                 print(f"Ignoring PR #{pr.pull_request_id} by {author_name}")
                 continue
 
