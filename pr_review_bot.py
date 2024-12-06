@@ -1,4 +1,4 @@
-import openai
+from openai import OpenAI
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 import os
@@ -10,7 +10,7 @@ from azure.devops.v7_1.git.models import GitPullRequestSearchCriteria,Comment, C
 load_dotenv()
 
 # Set up OpenAI API key from environment variables
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OpenAI_api_key = os.getenv("OPENAI_API_KEY")
 
 # Azure DevOps Organization and Project details from environment variables
 organization_url = os.getenv("AZURE_ORG_URL")
@@ -21,7 +21,7 @@ max_tokens = os.getenv("MAX_TOKENS")
 model_version = os.getenv("MODEL_VERSION")
 
 # List of authors to ignore
-IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "").split(",")
+IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "NONE").split(",")
 
 # Authenticate to Azure DevOps
 def get_azure_devops_connection():
@@ -64,17 +64,19 @@ def is_recent_pr(creation_date):
 
 # Analyze the PR diff using OpenAI
 def analyze_pr_diff(pr_id, diff):
-    try:
-        prompt = f"Review the following pull request provide feedback to all modified files give attention to time complexity and clean code principles:\n{diff}"
-        response = openai.Completion.create(
-            model=model_version,
-            prompt=prompt,
-            max_tokens=max_tokens
-        )
-        return response.choices[0].text.strip()
-    except Exception as e:
-        print(f"Error analyzing PR {pr_id}: {str(e)}")
-        return ""
+    prompt = f"Review the following pull request and provide feedback for all modified files. Give attention to time complexity and clean code principles:\n{diff}"
+    client = OpenAI(api_key=OpenAI_api_key)  # This is the default and can be omitted
+
+    reponse = client.chat.completions.create(
+        model=model_version,  # Correct model name
+        messages=[{
+            "role": "user",
+            "content": prompt,
+        }]
+    )
+    
+    return  response.choices[0].text.strip()
+
 
 # Comment on the pull request
 def comment_on_pr(pr_id, comment):
@@ -96,7 +98,7 @@ def comment_on_pr(pr_id, comment):
             repository_id=repository_id,
             project=project_name,
             pull_request_id=pr_id,
-            thread=thread
+            comment_thread=thread
         )
         print(f"Comment posted on PR #{pr_id}")
     except Exception as e:
@@ -105,33 +107,64 @@ def comment_on_pr(pr_id, comment):
 # Fetch the diff content of a pull request
 def fetch_pr_diff(pr_id):
     try:
+        # Establish connection and get the Git client
         connection = get_azure_devops_connection()
-        if connection is None:
-            return ""
-
         git_client = connection.clients.get_git_client()
-
-        # Fetch the pull request changes
-        changes = git_client.get_pull_request_changes(
+        
+        # Retrieve pull request iterations
+        iterations = git_client.get_pull_request_iterations(
             repository_id=repository_id,
             project=project_name,
             pull_request_id=pr_id
         )
-
-        # Combine all file diffs into a single string
+        
+        # Get the latest iteration
+        latest_iteration = max(iterations, key=lambda x: x.id)
+        
+        # Fetch changes for the latest iteration
+        iteration_changes = git_client.get_pull_request_iteration_changes(
+            repository_id=repository_id,
+            project=project_name,
+            pull_request_id=pr_id,
+            iteration_id=latest_iteration.id
+        )
+        
+        # Initialize the diff content
         diff_content = ""
-        for change in changes.changes:
-            if change.item.is_folder:  # Skip folder-level changes
-                continue
-            diff_content += f"File: {change.item.path}\n"
-            diff_content += f"Change Type: {change.change_type}\n"
-            if change.change_type == "edit" and hasattr(change, "diffs"):
-                diff_content += f"Diff:\n{change.diffs}\n"  # Adjust as per API response
+        
+        # Loop through the changes to extract diffs for each file
+        for change in iteration_changes.change_entries:
+            if change.additional_properties['item'] is not None:  # Only process items with valid file information
+                change = change.additional_properties['item']
+                file_path = change['path']
+                
+                # Check the change type (e.g., modified, added, deleted)
+                change_type = iteration_changes.change_entries[0].additional_properties['changeType']
+                
+                # Process modified files
+                if change_type in ['edit', 'add']:
+                    # Fetch the file content of the latest version
+                    file_content = git_client.get_item_content(
+                        repository_id=repository_id,
+                        project=project_name,
+                        path=file_path
+                    )
+                    file_content_ = ''.join(chunk.decode('utf-8') for chunk in file_content)
+                    # Add file details to the diff content
+                    diff_content += f"File: {file_path}\n"
+                    diff_content += f"Change Type: {change_type}\n"
+                    diff_content += f"Content:\n{file_content_}\n\n"
+                elif change_type == 'delete':
+                    # If the file is deleted, just log the deletion
+                    diff_content += f"File: {file_path}\n"
+                    diff_content += f"Change Type: {change_type}\n"
+                    diff_content += "Content: File deleted.\n\n"
 
         return diff_content
+
     except Exception as e:
-        print(f"Error fetching diff for PR {pr_id}: {str(e)}")
-        return ""
+        print(f"Error fetching PR diff: {e}")
+        return None
 
 # Main function to fetch PRs and review them
 def review_pull_requests():
