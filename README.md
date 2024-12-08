@@ -4,17 +4,10 @@
 
 ## AI-Powered Pull Request Reviewer 🚀
 
-PullPal leverages the power of OpenAI 🧠 and Azure DevOps ⚙️ to automate the review process for pull requests. 
-By analyzing code changes and providing actionable feedback using OpenAI, 
-it helps maintain clean code quality and accelerate development by providing code review comments.
+PullPal combines the capabilities of OpenAI 🧠 and Azure DevOps ⚙️ to automate the review process for pull requests.
+It periodically fetches active pull requests from Azure DevOps, analyzes the code changes using OpenAI's specified model,
+and posts the review comments directly on the pull request threads.
 
-## Features:
-
-Automated Code Review 🤖: Analyzes pull request diffs using OpenAI's advanced language models.
-
-Customizable Feedback 📝: Tailors feedback to specific code quality metrics and style guidelines.
-
-Azure DevOps Integration 🔗: Seamlessly integrates with Azure DevOps to fetch and comment on pull requests.
 
 How to Use:
 
@@ -33,15 +26,25 @@ PROJECT_NAME: Your Azure DevOps project name.
 REPO_ID: Your Azure DevOps repository ID.
 
 IGNORED_AUTHORS: A comma-separated list of authors to ignore.
-Run the Script:
 
-Execute the review_pull_requests() function to initiate the review process.
+INTERVAL_HOURS: running interval for fetching the PR's
+
+## Run the Script 🏃‍♂️
+
+To run the PullPal bot continuously using Docker, follow these steps:
+
+1. **Build the Docker Image 🛠️:**
+```sh
+   docker build -t pullpal-bot .
+   ```
+2.**Run the Docker Container 🐋:**
+```sh
+docker run -d --env-file .env pullpal-bot
+```
+
 Customization:
 
-Modify the analyze_pr_diff function to customize the prompt and feedback generation.
-Adjust the is_recent_pr function to change the time window for PR consideration.
-Extend the IGNORED_AUTHORS list to exclude specific authors.
-
+check .env file for customization,prompt is hardcoded but fill free to adjust
 
 
 
