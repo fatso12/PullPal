@@ -203,6 +203,6 @@ if __name__ == "__main__":
     try:
         while True:
             review_pull_requests()
-            time.sleep(timedelta(hours=run_interval_hours).total_seconds()) # 1 hour
+            time.sleep(timedelta(hours=run_interval_hours).total_seconds())
     except Exception as e:
         print(f"An error occurred while reviewing pull requests: {str(e)}")
