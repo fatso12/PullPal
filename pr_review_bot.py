@@ -5,7 +5,8 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from azure.devops.v7_1.git.models import GitPullRequestSearchCriteria,Comment, CommentThread
-
+from datetime import timedelta
+import time
 # Load environment variables from .env file
 load_dotenv()
 
@@ -19,7 +20,7 @@ project_name = os.getenv("PROJECT_NAME")
 repository_id = os.getenv("REPO_ID")
 max_tokens = os.getenv("MAX_TOKENS")
 model_version = os.getenv("MODEL_VERSION")
-
+run_interval_hours = os.getenv("INTERVAL_HOURS")
 # List of authors to ignore
 IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "NONE").split(",")
 
@@ -200,6 +201,8 @@ def review_pull_requests():
 # Run the script
 if __name__ == "__main__":
     try:
-        review_pull_requests()
+        while True:
+            review_pull_requests()
+            time.sleep(timedelta(hours=run_interval_hours).total_seconds()) # 1 hour
     except Exception as e:
         print(f"An error occurred while reviewing pull requests: {str(e)}")
