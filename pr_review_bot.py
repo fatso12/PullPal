@@ -69,7 +69,6 @@ def analyze_pr_diff(pr_id, diff):
     prompt +=diff
     client = LlamaStackClient(
     base_url=meta_llama_url,)
-    )
     response = client.inference.chat_completion(
     messages=[
         UserMessage(
