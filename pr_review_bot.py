@@ -32,39 +32,8 @@ app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.json
-    if data and 'pull_request' in data:
-        pr_id = data['pull_request']['id']
-        author_name = data['pull_request']['user']['login']
-
-        # Ignore PRs by specified authors
-        if author_name in IGNORED_AUTHORS:
-            print(f"Ignoring PR #{pr_id} by {author_name}")
-            return jsonify({'message': 'ignored'}), 200
-
-        print(f"Reviewing PR #{pr_id} by {author_name}")
-
-        # Fetch the diff content for the pull request
-        diff = fetch_pr_diff(pr_id)
-        if diff:
-            print(f"Fetched diff content for PR #{pr_id}")
-
-            # Analyze the diff content using OpenAI
-            review_comment = analyze_pr_diff(pr_id, diff)
-            print(f"Generated Review for PR #{pr_id}: {review_comment}")
-
-            # Comment on the pull request with the generated feedback
-            comment_on_pr(pr_id, review_comment)
-            print(f"Posted review comment on PR #{pr_id}")
-        else:
-            print(f"No diff content found for PR #{pr_id}")
-        return jsonify({'message': 'processed'}), 200
-    return jsonify({'message': 'invalid payload'}), 400
-
-if __name__ == "__main__":
-    app.run(port=flask_port)
-
-
+    get_pull_requests()
+    
 # Authenticate to Azure DevOps
 def get_azure_devops_connection():
     try:
@@ -242,8 +211,7 @@ def review_pull_requests():
 # Run the script
 if __name__ == "__main__":
     try:
-        while True:
-            review_pull_requests()
-            time.sleep(timedelta(hours=run_interval_hours).total_seconds())
+        app.run(port=5000)
+    
     except Exception as e:
         print(f"An error occurred while reviewing pull requests: {str(e)}")
