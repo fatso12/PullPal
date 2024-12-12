@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from azure.devops.v7_1.git.models import GitPullRequestSearchCriteria,Comment, CommentThread
 from datetime import timedelta
+from flask import Flask, request, jsonify
 import time
 # Load environment variables from .env file
 load_dotenv()
@@ -21,9 +22,18 @@ repository_id = os.getenv("REPO_ID")
 max_tokens = os.getenv("MAX_TOKENS")
 model_version = os.getenv("MODEL_VERSION")
 run_interval_hours = os.getenv("INTERVAL_HOURS")
+run_interval_hours = os.getenv("FLASK_PORT")
 # List of authors to ignore
 IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "NONE").split(",")
 
+
+
+app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    get_pull_requests()
+    
 # Authenticate to Azure DevOps
 def get_azure_devops_connection():
     try:
@@ -80,6 +90,7 @@ def analyze_pr_diff(pr_id, diff):
     stream=False,
 )
     return  response
+
 
 
 # Comment on the pull request
@@ -204,8 +215,7 @@ def review_pull_requests():
 # Run the script
 if __name__ == "__main__":
     try:
-        while True:
-            review_pull_requests()
-            time.sleep(timedelta(hours=run_interval_hours).total_seconds())
+        app.run(port=5000)
+    
     except Exception as e:
         print(f"An error occurred while reviewing pull requests: {str(e)}")
