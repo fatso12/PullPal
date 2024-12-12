@@ -1,5 +1,4 @@
-from llama_stack_client import LlamaStackClient
-from llama_stack_client.types import UserMessage
+from openai import OpenAI
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 import os
@@ -12,8 +11,9 @@ import time
 # Load environment variables from .env file
 load_dotenv()
 
-# Set up llama API key from environment variables
-meta_llama_url = os.getenv("META_LLAMA_URL")
+# Set up OpenAI API key from environment variables
+OpenAI_api_key = os.getenv("OPENAI_API_KEY")
+
 # Azure DevOps Organization and Project details from environment variables
 organization_url = os.getenv("AZURE_ORG_URL")
 personal_access_token = os.getenv("AZURE_PAT")
@@ -77,20 +77,16 @@ def is_recent_pr(creation_date):
 def analyze_pr_diff(pr_id, diff):
     prompt="Review the following pull request and provide a short 1 paragrpah feedback for all modified files.be short and summeraized for every file no more than 1 paragraph is allowed, Give attention to time complexity and clean code principles check for possible errors:"
     prompt +=diff
-    client = LlamaStackClient(
-    base_url=meta_llama_url,)
-    response = client.inference.chat_completion(
-    messages=[
-        UserMessage(
-            content=prompt,
-            role="user",
-        ),
-    ],
-    model=model_version,
-    stream=False,
-)
-    return  response
-
+    client = OpenAI(api_key=OpenAI_api_key) 
+    response = client.chat.completions.create(
+        model=model_version,  # Correct model name
+        messages=[{
+            "role": "user",
+            "content": prompt,
+        }]
+    )
+    
+    return  response.choices[0].text.strip()
 
 
 # Comment on the pull request
