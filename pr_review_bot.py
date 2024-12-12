@@ -1,4 +1,5 @@
-from openai import OpenAI
+from llama_stack_client import LlamaStackClient
+from llama_stack_client.types import UserMessage
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 import os
@@ -7,13 +8,13 @@ from datetime import datetime, timedelta
 from azure.devops.v7_1.git.models import GitPullRequestSearchCriteria,Comment, CommentThread
 from datetime import timedelta
 from flask import Flask, request, jsonify
+
 import time
 # Load environment variables from .env file
 load_dotenv()
 
 # Set up OpenAI API key from environment variables
 OpenAI_api_key = os.getenv("OPENAI_API_KEY")
-
 # Azure DevOps Organization and Project details from environment variables
 organization_url = os.getenv("AZURE_ORG_URL")
 personal_access_token = os.getenv("AZURE_PAT")
@@ -22,18 +23,19 @@ repository_id = os.getenv("REPO_ID")
 max_tokens = os.getenv("MAX_TOKENS")
 model_version = os.getenv("MODEL_VERSION")
 run_interval_hours = os.getenv("INTERVAL_HOURS")
-run_interval_hours = os.getenv("FLASK_PORT")
+flask_port = os.getenv("FLASK_PORT")
 # List of authors to ignore
 IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "NONE").split(",")
 
-
-
+# Set up OpenAI API key from environment variables
+OpenAI_api_key = os.getenv("OPENAI_API_KEY")
 app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     get_pull_requests()
     
+
 # Authenticate to Azure DevOps
 def get_azure_devops_connection():
     try:
@@ -77,16 +79,19 @@ def is_recent_pr(creation_date):
 def analyze_pr_diff(pr_id, diff):
     prompt="Review the following pull request and provide a short 1 paragrpah feedback for all modified files.be short and summeraized for every file no more than 1 paragraph is allowed, Give attention to time complexity and clean code principles check for possible errors:"
     prompt +=diff
-    client = OpenAI(api_key=OpenAI_api_key) 
-    response = client.chat.completions.create(
-        model=model_version,  # Correct model name
-        messages=[{
-            "role": "user",
-            "content": prompt,
-        }]
-    )
-    
-    return  response.choices[0].text.strip()
+    client = LlamaStackClient(
+    base_url=meta_llama_url,)
+    response = client.inference.chat_completion(
+    messages=[
+        UserMessage(
+            content=prompt,
+            role="user",
+        ),
+    ],
+    model=model_version,
+    stream=False,
+)
+    return  response
 
 
 # Comment on the pull request
@@ -211,7 +216,8 @@ def review_pull_requests():
 # Run the script
 if __name__ == "__main__":
     try:
-        app.run(port=5000)
-    
+        while True:
+            app.run(port=flask_port)
+            
     except Exception as e:
         print(f"An error occurred while reviewing pull requests: {str(e)}")
