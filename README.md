@@ -15,7 +15,7 @@ How to Use:
 
 Create a .env file in the project root.
 ## Add the following environment variables:
-OPENAI_API_KEY: Your OpenAI API key.
+META_LLAMA_URL: Your Meta Llama local url.
 
 AZURE_ORG_URL: Your Azure DevOps organization URL.
 
