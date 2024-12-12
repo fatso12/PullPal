@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from azure.devops.v7_1.git.models import GitPullRequestSearchCriteria,Comment, CommentThread
 from datetime import timedelta
+from flask import Flask, request, jsonify
 import time
 # Load environment variables from .env file
 load_dotenv()
@@ -21,8 +22,48 @@ repository_id = os.getenv("REPO_ID")
 max_tokens = os.getenv("MAX_TOKENS")
 model_version = os.getenv("MODEL_VERSION")
 run_interval_hours = os.getenv("INTERVAL_HOURS")
+run_interval_hours = os.getenv("FLASK_PORT")
 # List of authors to ignore
 IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "NONE").split(",")
+
+
+
+app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    data = request.json
+    if data and 'pull_request' in data:
+        pr_id = data['pull_request']['id']
+        author_name = data['pull_request']['user']['login']
+
+        # Ignore PRs by specified authors
+        if author_name in IGNORED_AUTHORS:
+            print(f"Ignoring PR #{pr_id} by {author_name}")
+            return jsonify({'message': 'ignored'}), 200
+
+        print(f"Reviewing PR #{pr_id} by {author_name}")
+
+        # Fetch the diff content for the pull request
+        diff = fetch_pr_diff(pr_id)
+        if diff:
+            print(f"Fetched diff content for PR #{pr_id}")
+
+            # Analyze the diff content using OpenAI
+            review_comment = analyze_pr_diff(pr_id, diff)
+            print(f"Generated Review for PR #{pr_id}: {review_comment}")
+
+            # Comment on the pull request with the generated feedback
+            comment_on_pr(pr_id, review_comment)
+            print(f"Posted review comment on PR #{pr_id}")
+        else:
+            print(f"No diff content found for PR #{pr_id}")
+        return jsonify({'message': 'processed'}), 200
+    return jsonify({'message': 'invalid payload'}), 400
+
+if __name__ == "__main__":
+    app.run(port=flask_port)
+
 
 # Authenticate to Azure DevOps
 def get_azure_devops_connection():
