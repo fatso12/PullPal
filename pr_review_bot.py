@@ -93,7 +93,7 @@ def analyze_pr_diff(diff):
         )
         return response.choices[0].text.strip()
     except Exception as e:
-        print(f"Error analyzing PR {pr_id}: {str(e)}")
+        print(f"Error analyzing PR: {str(e)}")
         return ""
 
         
