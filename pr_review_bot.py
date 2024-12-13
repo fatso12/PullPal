@@ -9,12 +9,9 @@ from datetime import timedelta
 from flask import Flask
 import difflib
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Set up OpenAI API key from environment variables
 OpenAI_api_key = os.getenv("OPENAI_API_KEY")
-# Azure DevOps Organization and Project details from environment variables
 organization_url = os.getenv("AZURE_ORG_URL")
 personal_access_token = os.getenv("AZURE_PAT")
 project_name = os.getenv("PROJECT_NAME")
@@ -22,10 +19,8 @@ repository_id = os.getenv("REPO_ID")
 max_tokens = os.getenv("MAX_TOKENS")
 model_version = os.getenv("MODEL_VERSION")
 flask_port = os.getenv("FLASK_PORT")
-# List of authors to ignore
 IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "NONE").split(",")
 
-# Set up OpenAI API key from environment variables
 OpenAI_api_key = os.getenv("OPENAI_API_KEY")
 app = Flask(__name__)
 
@@ -70,7 +65,7 @@ def is_author_ignored(author):
 # Filter PRs created in the last 24 hours
 def is_recent_pr(creation_date):
     now = datetime.utcnow()
-    pr_date = datetime.strptime(creation_date, "%Y-%m-%dT%H:%M:%SZ")  # Azure DevOps uses ISO 8601 format
+    pr_date = datetime.strptime(creation_date, "%Y-%m-%dT%H:%M:%SZ") 
     return now - pr_date <= timedelta(days=1)
 
 # Analyze the PR diff using OpenAI
@@ -106,13 +101,11 @@ def comment_on_pr(pr_id, comment):
 
         git_client = connection.clients.get_git_client()
 
-        # Create a comment thread
         thread = CommentThread(
             comments=[Comment(content=comment)],
             status="active"
         )
 
-        # Add the comment thread to the pull request
         git_client.create_thread(
             repository_id=repository_id,
             project=project_name,
@@ -128,7 +121,6 @@ def fetch_pr_diff(pr_id):
     connection = get_azure_devops_connection()
     git_client = connection.clients.get_git_client()
 
-    # Get PR details
     pr = git_client.get_pull_request_by_id(pr_id)
     
     print(f"\nPR Details:")
@@ -136,17 +128,14 @@ def fetch_pr_diff(pr_id):
     print(f"Source: {pr.source_ref_name}")
     print(f"Target: {pr.target_ref_name}")
     
-    # Get the PR changes directly using the iterations API
     iterations = git_client.get_pull_request_iterations(
         project=project_name,
         repository_id=repository_id,
         pull_request_id=pr_id
     )
     
-    # Get the latest iteration
     latest_iteration = iterations[-1].id
     
-    # Get changes for this iteration
     changes = git_client.get_pull_request_iteration_changes(
         project=project_name,
         repository_id=repository_id,
@@ -162,34 +151,31 @@ def fetch_pr_diff(pr_id):
         print(f"\nProcessing {file_path}")
         
         try:
-            # Get the PR version using get_item_content
             pr_content = git_client.get_item_content(
                 repository_id=repository_id,
                 project=project_name,
                 path=file_path,
-                download=True,  # Important: This forces content download
+                download=True,  
                 version_descriptor=GitBaseVersionDescriptor(
                     version=pr.source_ref_name.replace('refs/heads/', ''),
                     version_type="branch"
                 )
             )
             
-            # Get the target branch version
             target_content = git_client.get_item_content(
                 repository_id=repository_id,
                 project=project_name,
                 path=file_path,
-                download=True,  # Important: This forces content download
+                download=True, 
                 version_descriptor=GitTargetVersionDescriptor(
                     version=pr.target_ref_name.replace('refs/heads/', ''),
                     version_type="branch"
                 )
             )
             
-            # Convert byte streams to strings
             pr_text = ''.join(chunk.decode('utf-8') for chunk in pr_content)
             target_text = ''.join(chunk.decode('utf-8') for chunk in target_content)
-            # Compare the contents
+            
             differ = difflib.Differ()
             diff = differ.compare(pr_text.splitlines(), target_text.splitlines()) 
             actual_changes = [line.lstrip('-+ ')  for line in diff if line.startswith(('- ', '+ '))]
@@ -214,21 +200,17 @@ def review_pull_requests():
         for pr in pull_requests:
             author_name = pr.created_by.display_name
 
-            # Ignore PRs by specified authors
             if author_name in IGNORED_AUTHORS:
                 print(f"Ignoring PR #{pr.pull_request_id} by {author_name}")
                 continue
 
             print(f"Reviewing PR #{pr.pull_request_id} - {pr.title} by {author_name}")
 
-            # Fetch the diff content for the pull request
             diff = fetch_pr_diff(pr.pull_request_id)
             if diff:
                 print(f"Fetched diff content for PR #{pr.pull_request_id}")
 
-                # Analyze the diff content using OpenAI
                 review_comment = analyze_pr_diff(diff)
-                # Comment on the pull request with the generated feedback
                 comment_on_pr(pr.pull_request_id, review_comment)
                 print(f"Posted review comment on PR #{pr.pull_request_id}")
             else:
@@ -236,7 +218,6 @@ def review_pull_requests():
     except Exception as e:
         print(f"Error reviewing pull requests: {str(e)}")
 
-# Run the script
 if __name__ == "__main__":
     try:
         while True:
