@@ -16,6 +16,7 @@ idna==3.10
 isodate==0.7.2
 itsdangerous==2.2.0
 Jinja2==3.1.4
+jiter==0.8.2
 llama_stack_client==0.0.60
 markdown-it-py==3.0.0
 MarkupSafe==3.0.2
@@ -23,6 +24,7 @@ mdurl==0.1.2
 msrest==0.7.1
 numpy==2.2.0
 oauthlib==3.2.2
+openai==1.57.3
 pandas==2.2.3
 prompt_toolkit==3.0.48
 pyaml==24.9.0
