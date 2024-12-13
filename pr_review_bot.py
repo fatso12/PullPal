@@ -21,7 +21,6 @@ project_name = os.getenv("PROJECT_NAME")
 repository_id = os.getenv("REPO_ID")
 max_tokens = os.getenv("MAX_TOKENS")
 model_version = os.getenv("MODEL_VERSION")
-run_interval_hours = os.getenv("INTERVAL_HOURS")
 flask_port = os.getenv("FLASK_PORT")
 # List of authors to ignore
 IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "NONE").split(",")
