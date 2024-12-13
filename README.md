@@ -35,7 +35,7 @@ INTERVAL_HOURS: running interval for fetching the PR's
 
 ## Run the Script 🏃‍♂️
 
-# To run the PullPal bot continuously using Docker 🐋:
+# To run the PullPal bot using Docker 🐋:
 
 1. **Build the Docker Image 🛠️:**
 ```sh
