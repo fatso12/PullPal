@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from azure.devops.v7_0.git.models import GitPullRequestSearchCriteria,Comment, CommentThread,GitTargetVersionDescriptor,GitBaseVersionDescriptor
-from flask import Flask
+from flask import Flask, request, jsonify
 import difflib
 
 load_dotenv()
@@ -21,6 +21,9 @@ flask_port = os.getenv("FLASK_PORT")
 IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "NONE").split(",")
 
 app = Flask(__name__)
+
+processed_prs = set()
+
 def validate_env_variables():
     required_vars = [
         "AZURE_ORG_URL", "AZURE_PAT", "PROJECT_NAME", 
@@ -34,10 +37,12 @@ def validate_env_variables():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
-        get_pull_requests()
+        data = request.json
+        pr_id = data.get("resource",{}).get("pullRequestId")
+        review_pull_requests(pr_id)
         return "Pull requests reviewed", 200
     except Exception as e:
-        logging.error(f"Error in webhook endpoint: {e}")
+        print(e)
         return "Internal Server Error", 500
 
 # Authenticate to Azure DevOps
@@ -51,18 +56,16 @@ def get_azure_devops_connection():
         return None
 
 # Get pull requests from Azure DevOps
-def get_pull_requests():
+def get_pull_requests(pr_id):
     try:
         connection = get_azure_devops_connection()
         if connection is None:
             return []
 
-        criteria = GitPullRequestSearchCriteria(status='active')
         git_client = connection.clients.get_git_client()
-        pull_requests = git_client.get_pull_requests(
+        pull_requests = git_client.get_pull_request_by_id(
             project=project_name,
-            repository_id=repository_id,
-            search_criteria=criteria
+            pull_request_id=pr_id
         )
         return pull_requests
     except Exception as e:
@@ -205,33 +208,33 @@ def fetch_pr_diff(pr_id):
 
 
 # Main function to fetch PRs and review them
-def review_pull_requests():
+def review_pull_requests(pr_id):
     try:
-        pull_requests = get_pull_requests()
-        for pr in pull_requests:
-            author_name = pr.created_by.display_name
+        pr = get_pull_requests(pr_id)
+        author_name = pr.created_by.display_name
 
-            if author_name in IGNORED_AUTHORS:
-                print(f"Ignoring PR #{pr.pull_request_id} by {author_name}")
-                continue
-
+        if author_name in IGNORED_AUTHORS:
+            print(f"Ignoring PR #{pr.pull_request_id} by {author_name}")
             print(f"Reviewing PR #{pr.pull_request_id} - {pr.title} by {author_name}")
 
-            diff = fetch_pr_diff(pr.pull_request_id)
-            if diff:
-                print(f"Fetched diff content for PR #{pr.pull_request_id}")
+        diff = fetch_pr_diff(pr.pull_request_id)
+        if diff:
+            print(f"Fetched diff content for PR #{pr.pull_request_id}")
 
-                review_comment = analyze_pr_diff(diff)
-                comment_on_pr(pr.pull_request_id, review_comment)
-                print(f"Posted review comment on PR #{pr.pull_request_id}")
-            else:
-                print(f"No diff content found for PR #{pr.pull_request_id}")
+            review_comment = analyze_pr_diff(diff)
+            comment_on_pr(pr.pull_request_id, review_comment)
+            print(f"Posted review comment on PR #{pr.pull_request_id}")
+        else:
+            print(f"No diff content found for PR #{pr.pull_request_id}")
     except Exception as e:
         print(f"Error reviewing pull requests: {str(e)}")
 
 if __name__ == "__main__":
     try:
-        validate_env_variables()
+        validate_env_variables()   
+        # Start ngrok tunnel
+        flask_port = int(flask_port)
+        # Start Flask app
         app.run(port=flask_port)
     except Exception as e:
         print(f"An error occurred while reviewing pull requests: {str(e)}")
