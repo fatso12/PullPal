@@ -30,11 +30,16 @@ def validate_env_variables():
     if missing_vars:
         raise EnvironmentError(f"Missing environment variables: {', '.join(missing_vars)}")
 
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    get_pull_requests()
-    return "Pull requests reviewed", 200
-    
+    try:
+        get_pull_requests()
+        return "Pull requests reviewed", 200
+    except Exception as e:
+        logging.error(f"Error in webhook endpoint: {e}")
+        return "Internal Server Error", 500
+
 # Authenticate to Azure DevOps
 def get_azure_devops_connection():
     try:
