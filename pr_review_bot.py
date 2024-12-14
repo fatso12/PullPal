@@ -21,12 +21,20 @@ flask_port = os.getenv("FLASK_PORT")
 IGNORED_AUTHORS = os.getenv("IGNORED_AUTHORS", "NONE").split(",")
 
 app = Flask(__name__)
+def validate_env_variables():
+    required_vars = [
+        "AZURE_ORG_URL", "AZURE_PAT", "PROJECT_NAME", 
+        "REPO_ID", "FLASK_PORT", "OPENAI_API_KEY", "MODEL_VERSION"
+    ]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        raise EnvironmentError(f"Missing environment variables: {', '.join(missing_vars)}")
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     get_pull_requests()
+    return "Pull requests reviewed", 200
     
-
 # Authenticate to Azure DevOps
 def get_azure_devops_connection():
     try:
@@ -218,6 +226,7 @@ def review_pull_requests():
 
 if __name__ == "__main__":
     try:
+        validate_env_variables()
         app.run(port=flask_port)
     except Exception as e:
         print(f"An error occurred while reviewing pull requests: {str(e)}")
