@@ -86,10 +86,10 @@ def analyze_pr_diff(diff):
             file_name = item.get("file", "Unknown File")
             changes = item.get("changes", "No changes provided")
             prompt += f"File: {file_name}\n{changes}\n\n"
-            response = openai.Completion.create(
-            model=model_version,
-            prompt=prompt,
-            max_tokens=max_tokens
+        response = openai.Completion.create(
+        model=model_version,
+        prompt=prompt,
+        max_tokens=max_tokens
         )
         return response.choices[0].text.strip()
     except Exception as e:
