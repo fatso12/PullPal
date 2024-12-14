@@ -76,12 +76,6 @@ def get_pull_requests(pr_id):
 def is_author_ignored(author):
     return author.lower() in [ignored_author.lower() for ignored_author in IGNORED_AUTHORS]
 
-# Filter PRs created in the last 24 hours
-def is_recent_pr(creation_date):
-    now = datetime.utcnow()
-    pr_date = datetime.strptime(creation_date, "%Y-%m-%dT%H:%M:%SZ") 
-    return now - pr_date <= timedelta(days=1)
-
 # Analyze the PR diff using OpenAI
 def analyze_pr_diff(diff):
     try:
@@ -232,9 +226,7 @@ def review_pull_requests(pr_id):
 if __name__ == "__main__":
     try:
         validate_env_variables()   
-        # Start ngrok tunnel
         flask_port = int(flask_port)
-        # Start Flask app
         app.run(port=flask_port)
     except Exception as e:
         print(f"An error occurred while reviewing pull requests: {str(e)}")
